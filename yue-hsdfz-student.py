@@ -85,7 +85,7 @@ def queryTestInfo(rootURL):
 
 def MainMenu():
     global queryTestID
-    print(Fore.MAGENTA+"0.退出\n1.查考试清单\n2.直查考试id")
+    print(Fore.MAGENTA+"0.退出\n1.查考试清单\n2.直查考试id\n3.退出登录")
     Mission = input(Fore.RED + "请选择要执行的任务:" + Fore.WHITE)
     if Mission=="2":
         queryTestID = input("请输入需要查询的考试 id:")
@@ -103,6 +103,11 @@ def MainMenu():
             queryTestID = input("请输入需要查询的考试 id:")
             url = "https://yue.hsdfz.com.cn/oaklet/student/listvalidsubjecthtmldata.html?pid=" + str(queryTestID)
             queryTestInfo(url)
+        elif Mission=="3":
+            url = "https://yue.hsdfz.com.cn/oaklet/j_spring_security_logout"
+            res = oaklet.get(url)
+            print("已成功退出登录。")
+            Login()
         else:
             print("\nBye\n")
             exit()
