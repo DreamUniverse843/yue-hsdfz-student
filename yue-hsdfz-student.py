@@ -46,13 +46,14 @@ def getSpecificScore(rootURL,isTotal):
         url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
         paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
         paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号"))
+        print("==========基本情况==========")
+        print(paperResult.iloc[0])
+        print("==========错题情况==========")
+        print(paperErrors)
     else:
         paperResult = paperResult.append(pandas.read_html(str(testSpecificResult.find_all("table")),match="考号"))
-        paperErrors = paperErrors.append(pandas.read_html(str(testSpecificResult.find_all("table")),match="题号"))
-    print("==========基本情况==========")
-    print(paperResult.iloc[0])
-    print("==========错题情况==========")
-    print(paperErrors)
+        print("==========基本情况==========")
+        print(paperResult.iloc[0])
     
 
 
