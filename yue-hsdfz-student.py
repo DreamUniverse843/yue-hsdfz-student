@@ -8,10 +8,13 @@ import requests
 from colorama import init,Fore,Back,Style
 from bs4 import BeautifulSoup
 import pandas
-import html5lib
 #============
 
 oaklet = requests.session() # 会话持久化自动保留 cookies
+
+pandas.set_option('display.unicode.ambiguous_as_wide', True)
+pandas.set_option('display.unicode.east_asian_width', True)
+pandas.set_option('display.width', 180) 
 
 def Login():
     global username,password
@@ -37,17 +40,20 @@ def getSpecificScore(rootURL,isTotal):
     testSpecificResult = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
     #print(str(testSpecificResult))
     #print(testSpecificResult.find_all("table"))
+    paperResult = paperErrors = pandas.DataFrame()
     if isTotal == 0:
         paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
         url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
-        paperResult = pandas.DataFrame()
-        paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table")))))
-        print(paperResult)
+        paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
+        paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号"))
     else:
-        testTotalResult = pandas.DataFrame()
-        testTotalResult = testTotalResult.append(pandas.read_html(str(testSpecificResult.find_all("table"))))
-        print(testTotalResult)
-
+        paperResult = paperResult.append(pandas.read_html(str(testSpecificResult.find_all("table")),match="考号"))
+        paperErrors = paperErrors.append(pandas.read_html(str(testSpecificResult.find_all("table")),match="题号"))
+    print("==========基本情况==========")
+    print(paperResult.iloc[0])
+    print("==========错题情况==========")
+    print(paperErrors)
+    
 
 
 def queryTestInfo(rootURL):
