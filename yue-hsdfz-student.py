@@ -8,6 +8,7 @@ import requests
 from colorama import init,Fore,Back,Style
 from bs4 import BeautifulSoup
 import pandas
+import maskpass
 #============
 
 oaklet = requests.session() # 会话持久化自动保留 cookies
@@ -19,7 +20,7 @@ pandas.set_option('display.width', 180)
 def Login():
     global username,password
     username=input("请输入用户名：")
-    password=input("请输入密码：")
+    password=maskpass.askpass("请输入密码：")
     res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?j_username="+ username +"&j_password="+ password +"&submit=%E7%99%BB%E3%80%80%E3%80%80%E5%BD%95")
     if("用户名或密码错误！" in res.text):
         print(Fore.RED+"用户名或密码错误，请检查用户名和密码是否正确。")
