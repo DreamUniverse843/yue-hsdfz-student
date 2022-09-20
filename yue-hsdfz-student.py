@@ -18,23 +18,18 @@ pandas.set_option('display.unicode.east_asian_width', True)
 pandas.set_option('display.width', 180) 
 
 def Login():
+    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed in GPLv3.\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
+    print("\n登录中。如程序长时间卡在此消息处，可能学校服务器响应超时。\n")
     res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?j_username="+ username +"&j_password="+ password +"&submit=%E7%99%BB%E3%80%80%E3%80%80%E5%BD%95")
     if("用户名或密码错误！" in res.text):
         print(Fore.RED+"用户名或密码错误，请检查用户名和密码是否正确。")
         Login()
     else:
-        print(Fore.CYAN+"登录成功。")
+        print(Fore.CYAN+"登录成功。\n")
         MainMenu()
-    #print(Fore.MAGENTA+"是否需要储存用户信息?")
-    #isUserInfoStorage=input(Fore.RED + "1 - 是，2 - 否\n")
-    #if isUserInfoStorage=="2":
-    #    MainMenu()
-    #else:
-    #    open("ProfileCache.txt","w",encoding='utf-8').write(username+"%%"+password)
-    #    print("用户信息已保存。")
         
 
 def getSpecificScore(rootURL,isTotal):
@@ -59,11 +54,18 @@ def getSpecificScore(rootURL,isTotal):
 
 
 def queryTestInfo(rootURL):
+    global isForceQuery
     testGeneralInfo = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
     #print(testGeneralInfo)
     if testGeneralInfo.find_all("li") == []:
-        print(Fore.RED + "未获取到考试数据，考试 ID 可能无效。"+Fore.WHITE)
-        MainMenu()
+        print(Fore.RED + "未获取到考试数据，考试 ID 可能无效。" + Fore.WHITE)
+        if isForceQuery != "y":
+            isForceQuery = input("是否要尝试强制查询?(y/N)")
+            if isForceQuery != "y":
+                MainMenu()
+            else:
+                print(Fore.RED + "请注意:您正在进行强制查询。\n" + Fore.WHITE)
+                print(" 14  语文\n 22  政治\n 17  物理\n 15  数学\n 16  英语\n 18  化学\n 21  地理\n 20  历史\n 19  生物")
     print("\n当前查询的考试 ID:"+queryTestID)
     #print(testGeneralInfo.find_all("a"))
     if testGeneralInfo.find_all("a") == []:
@@ -92,7 +94,8 @@ def queryTestInfo(rootURL):
     queryTestInfo(rootURL)
 
 def MainMenu():
-    global queryTestID
+    global queryTestID,isForceQuery
+    isForceQuery = ""
     print(Fore.MAGENTA+"0.退出\n1.查考试清单\n2.直查考试id\n3.退出登录")
     Mission = input(Fore.RED + "请选择要执行的任务:" + Fore.WHITE)
     if Mission=="2":
