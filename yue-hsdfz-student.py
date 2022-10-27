@@ -1,21 +1,34 @@
 #============
 #依赖库区
 #============
+from ast import For
 from cgi import test
 from imghdr import tests
 import re
+import os
 import requests
 from colorama import init,Fore,Back,Style
 from bs4 import BeautifulSoup
 import pandas
 import maskpass
+import warnings
+import platform
 #============
 
 oaklet = requests.session() # 会话持久化自动保留 cookies
 
+warnings.filterwarnings('ignore') # 过滤依赖库抛出的 Warning
+
+# 查分表格式化输出
 pandas.set_option('display.unicode.ambiguous_as_wide', True)
 pandas.set_option('display.unicode.east_asian_width', True)
 pandas.set_option('display.width', 180) 
+
+def ClearScreen():
+    if(platform.system == "Windows"):
+        os.system("cls")
+    else:
+        os.system("printf'\033c'")
 
 def Login():
     print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed in GPLv3.\n\n==================================")
@@ -25,8 +38,8 @@ def Login():
     print("\n登录中。如程序长时间卡在此消息处，可能学校服务器响应超时。\n")
     res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?j_username="+ username +"&j_password="+ password +"&submit=%E7%99%BB%E3%80%80%E3%80%80%E5%BD%95")
     if("用户名或密码错误！" in res.text):
-        print(Fore.RED+"用户名或密码错误，请检查用户名和密码是否正确。")
-        Login()
+        print(Fore.RED+"用户名或密码错误，请检查用户名和密码是否正确。"+ Fore.WHITE)
+        exit()
     else:
         print(Fore.CYAN+"登录成功。\n")
         MainMenu()
@@ -38,18 +51,25 @@ def getSpecificScore(rootURL,isTotal):
     #print(testSpecificResult.find_all("table"))
     paperResult = paperErrors = pandas.DataFrame()
     if isTotal == 0:
-        paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
-        url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
-        paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
-        paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号"))
-        print("==========基本情况==========")
-        print(paperResult.iloc[0])
-        print("==========错题情况==========")
-        print(paperErrors)
+        try:
+            paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
+            url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
+            paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
+            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号"))
+            print("==========基本情况==========")
+            print(paperResult.iloc[0])
+            print("==========错题情况==========")
+            print(paperErrors)
+        except(IndexError):
+            print(Fore.RED + "\n无该科目试卷信息，可能是 ID 无效，或考生未参与该科考试，或试卷未扫描。\n"+Fore.WHITE)
     else:
-        paperResult = paperResult.append(pandas.read_html(str(testSpecificResult.find_all("table")),match="考号"))
-        print("==========基本情况==========")
-        print(paperResult.iloc[0])
+        try:
+            paperResult = paperResult.append(pandas.read_html(str(testSpecificResult.find_all("table")),match="考号"))
+            print("==========基本情况==========")
+            print(paperResult.iloc[0])
+        except (ValueError):
+            print(Fore.RED + "\n没有多科数据，可能未合成总成绩表。\n")
+
     
 
 
@@ -81,6 +101,7 @@ def queryTestInfo(rootURL):
         else:
             print(" " + itemID + "  " + itemName)
     QueryTestSubject = input("请输入您要查询的学科 id,或留空以获取总成绩,输入 exit 退出当前考试查询:")
+    ClearScreen()
     if QueryTestSubject == "":
         url = "https://yue.hsdfz.com.cn/oaklet/student/getexamgrademultitotalofuser.html?projectid="+ queryTestID + "&uid="+ username + "&group=all"
         getSpecificScore(url,1)
@@ -111,9 +132,12 @@ def MainMenu():
                 testID = child.get('id')
                 testName = (re.sub(r'[\u3000\u0020\t]+', '', child.get_text()).replace("\n",""))
                 print(" " + testID + "  " + testName)
-            queryTestID = input("请输入需要查询的考试 id:")
-            url = "https://yue.hsdfz.com.cn/oaklet/student/listvalidsubjecthtmldata.html?pid=" + str(queryTestID)
-            queryTestInfo(url)
+            queryTestID = input(Fore.RED + "如果没有看到您要查询的考试，请尝试使用直查id模式。\n" + Fore.WHITE + "请输入需要查询的考试 id，或留空以返回主菜单:")
+            if queryTestID == "":
+                MainMenu()
+            else:
+                url = "https://yue.hsdfz.com.cn/oaklet/student/listvalidsubjecthtmldata.html?pid=" + str(queryTestID)
+                queryTestInfo(url)
         elif Mission=="3":
             url = "https://yue.hsdfz.com.cn/oaklet/j_spring_security_logout"
             res = oaklet.get(url)
