@@ -24,11 +24,12 @@ pandas.set_option('display.unicode.ambiguous_as_wide', True)
 pandas.set_option('display.unicode.east_asian_width', True)
 pandas.set_option('display.width', 180) 
 
+# 每次查询后清屏避免终端字符堆积
 def ClearScreen():
     if(platform.system == "Windows"):
-        os.system("cls")
+        os.system("cls") # Windows 系统下调用 cls 清屏
     else:
-        os.system("printf'\033c'")
+        os.system("printf'\033c'") # Linux 系统下调用复位符清屏
 
 def Login():
     print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed in GPLv3.\n\n==================================")
