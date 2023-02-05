@@ -1,5 +1,5 @@
 #============
-#依赖库区
+# 依赖库区
 #============
 from ast import For
 from cgi import test
@@ -22,17 +22,43 @@ warnings.filterwarnings('ignore') # 过滤依赖库抛出的 Warning
 # 查分表格式化输出
 pandas.set_option('display.unicode.ambiguous_as_wide', True)
 pandas.set_option('display.unicode.east_asian_width', True)
-pandas.set_option('display.width', 180) 
+pandas.set_option('display.width', 180)
+
+def getCardImage():
+    getCardImageURL=''
+    namedWindow=''
+    getCardImageType=int(input("0:返回上一级\n1:正面原始卡\n2:正面批注卡\n3:背面原始卡\n4:背面批注卡\n请指定需要显示的卡图像:"))
+    if(getCardImageType==0):
+        return;
+    else:
+        if(getCardImageType==1):
+            url = "https://yue.hsdfz.com.cn/oaklet/student/paperdataview_frontimage.html?id=" + paperID
+            ImgLabel = BeautifulSoup(oaklet.get(url).content,"lxml").find_all('img')
+            for imgURL in ImgLabel:
+               getCardImageURL=imgURL.get('src')
+        elif(getCardImageType==2):
+            getCardImageURL = "https://yue.hsdfz.com.cn/oaklet/student/getmarkedpaperdata.html?id=" + paperID + "&side=front"
+        elif(getCardImageType==3):
+            url = "https://yue.hsdfz.com.cn/oaklet/student/paperdataview_backimage.html?id=" + paperID
+            ImgLabel = BeautifulSoup(oaklet.get(url).content,"lxml").find_all('img')
+            for imgURL in ImgLabel:
+                getCardImageURL=imgURL.get('src')
+        elif(getCardImageType==4):
+            getCardImageURL = "https://yue.hsdfz.com.cn/oaklet/student/getmarkedpaperdata.html?id=" + paperID + "&side=back"
+        with open('cache.jpg',"wb") as Image:
+            Image.write(oaklet.get(getCardImageURL).content)
+        os.startfile('cache.jpg')
+        getCardImage()
 
 # 每次查询后清屏避免终端字符堆积
 def ClearScreen():
     if(platform.system == "Windows"):
-        os.system("cls") # Windows 系统下调用 cls 清屏
+        os.system('cls') # Windows 系统下调用 cls 清屏
     else:
         os.system("printf'\033c'") # Linux 系统下调用复位符清屏
 
 def Login():
-    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed in GPLv3.\n\n==================================")
+    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3.\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
@@ -47,6 +73,8 @@ def Login():
         
 
 def getSpecificScore(rootURL,isTotal):
+    global paperID
+    print(rootURL)
     testSpecificResult = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
     #print(str(testSpecificResult))
     #print(testSpecificResult.find_all("table"))
@@ -61,6 +89,10 @@ def getSpecificScore(rootURL,isTotal):
             print(paperResult.iloc[0])
             print("==========错题情况==========")
             print(paperErrors)
+            res=input(Fore.RED+"是否需要显示评卷图?(y/N) "+Fore.WHITE)
+            if(res=='y' or res=='Y'):
+                getCardImage()
+            
         except(IndexError):
             print(Fore.RED + "\n无该科目试卷信息，可能是 ID 无效，或考生未参与该科考试，或试卷未扫描。\n"+Fore.WHITE)
     else:
