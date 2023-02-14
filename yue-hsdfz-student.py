@@ -2,8 +2,6 @@
 # 依赖库区
 #============
 from ast import For
-from cgi import test
-from imghdr import tests
 import re
 import os
 import requests
@@ -22,7 +20,8 @@ warnings.filterwarnings('ignore') # 过滤依赖库抛出的 Warning
 # 查分表格式化输出
 pandas.set_option('display.unicode.ambiguous_as_wide', True)
 pandas.set_option('display.unicode.east_asian_width', True)
-pandas.set_option('display.width', 180)
+pandas.set_option('display.width', 200)
+pandas.set_option('display.max_colwidth', 200)
 
 def getCardImage():
     getCardImageURL=''
@@ -37,6 +36,8 @@ def getCardImage():
             for imgURL in ImgLabel:
                getCardImageURL=imgURL.get('src')
         elif(getCardImageType==2):
+            oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/recreatemarkedpaperdata.html?id=" + paperID + "&side=front") # 取批注卡时先刷新批注
+            print("请求刷新批注信息中，请稍等。")
             getCardImageURL = "https://yue.hsdfz.com.cn/oaklet/student/getmarkedpaperdata.html?id=" + paperID + "&side=front"
         elif(getCardImageType==3):
             url = "https://yue.hsdfz.com.cn/oaklet/student/paperdataview_backimage.html?id=" + paperID
@@ -44,6 +45,8 @@ def getCardImage():
             for imgURL in ImgLabel:
                 getCardImageURL=imgURL.get('src')
         elif(getCardImageType==4):
+            oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/recreatemarkedpaperdata.html?id=" + paperID + "&side=back") # 取批注卡时先刷新批注
+            print("请求刷新批注信息中，请稍等。")
             getCardImageURL = "https://yue.hsdfz.com.cn/oaklet/student/getmarkedpaperdata.html?id=" + paperID + "&side=back"
         with open('cache.jpg',"wb") as Image:
             Image.write(oaklet.get(getCardImageURL).content)
@@ -84,7 +87,7 @@ def getSpecificScore(rootURL,isTotal):
             paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
             url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
             paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
-            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号"))
+            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1) # 知识点太长影响表输出，直接移除
             print("==========基本情况==========")
             print(paperResult.iloc[0])
             print("==========错题情况==========")
