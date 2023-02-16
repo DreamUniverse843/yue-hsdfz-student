@@ -5,3 +5,4 @@ maskpass
 colorama
 lxml
 html5lib
+click
