@@ -60,7 +60,7 @@ def ClearScreen():
 
 def Login():
     init()
-    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3.\n\n==================================")
+    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.0)\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
