@@ -11,6 +11,7 @@ import pandas
 import maskpass
 import warnings
 import platform
+import click
 #============
 
 oaklet = requests.session() # 会话持久化自动保留 cookies
@@ -55,12 +56,10 @@ def getCardImage():
 
 # 每次查询后清屏避免终端字符堆积
 def ClearScreen():
-    if(platform.system == "Windows"):
-        os.system('cls') # Windows 系统下调用 cls 清屏
-    else:
-        os.system("printf'\033c'") # Linux 系统下调用复位符清屏
+    click.clear()
 
 def Login():
+    init()
     print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3.\n\n==================================")
     global username,password
     username=input("请输入用户名：")
@@ -87,7 +86,7 @@ def getSpecificScore(rootURL,isTotal):
             paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
             url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
             paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
-            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1) # 知识点太长影响表输出，直接移除
+            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1)
             print("==========基本情况==========")
             print(paperResult.iloc[0])
             print("==========错题情况==========")
