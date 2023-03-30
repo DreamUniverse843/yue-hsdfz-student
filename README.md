@@ -8,9 +8,9 @@ hsdfz oaklet 命令行式阅卷系统登录工具
 
 1.请先将整个项目 Clone 到本地；
 
-2.请确保您的系统上安装有 Python，如果没有可以去 https://python.org 自行下载；
+2.请确保您的系统上安装有 Python，如果没有可以去 https://python.org 自行下载，安装时请将 Python 安装到系统 PATH；
 
-3.在项目根目录下运行 `pip install -r requirements.txt` ，pip 会自动补齐依赖；
+3.在项目根目录下运行 `install.bat` ，pip 会自动走镜像源补齐依赖；
 
 4.双击 yue-hsdfz-student.py 即可享用！(*建议 Windows 用户在 Windows Terminal 下使用以获得最佳终端体验*)
 
