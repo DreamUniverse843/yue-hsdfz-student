@@ -60,7 +60,7 @@ def ClearScreen():
 
 def Login():
     init()
-    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.0)\n\n==================================")
+    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.2)\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
@@ -80,15 +80,21 @@ def getSpecificScore(rootURL,isTotal):
     testSpecificResult = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
     #print(str(testSpecificResult))
     #print(testSpecificResult.find_all("table"))
-    paperResult = paperErrors = pandas.DataFrame()
+    paperResult = paperErrors = paperObjectResult = paperSubjectResult = pandas.DataFrame()
     if isTotal == 0:
         try:
             paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
             url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
             paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
             paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1)
+            paperObjectResult = paperObjectResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/listuseroqs.html?paperdataid=" + paperID).content,"lxml").find_all("table"))),match="序号"))
+            paperSubjectResult = paperSubjectResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/listusersqs.html?paperdataid=" + paperID).content,"lxml").find_all("table"))),match="序号"))
             print("==========基本情况==========")
             print(paperResult.iloc[0])
+            print("=========客观题情况=========")
+            print(paperObjectResult)
+            print("=========主观题情况=========")
+            print(paperSubjectResult)
             print("==========错题情况==========")
             print(paperErrors)
             res=input(Fore.RED+"是否需要显示评卷图?(y/N) "+Fore.WHITE)
@@ -129,7 +135,7 @@ def queryTestInfo(rootURL):
         print(Fore.CYAN + "该考试已出总成绩，可以获取总成绩信息。"+Fore.WHITE)
     for child in testGeneralInfo.find_all("li"):
         itemID = child.get('itemid')
-        itemName = child.get_text()
+        itemName = (re.sub(r'[\u3000\u0020\t]+', '', child.get_text()).replace("\n",""))
         #print(itemID)
         if itemID is None:
             continue;
