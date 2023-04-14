@@ -1,16 +1,14 @@
 #============
 # 依赖库区
 #============
-from ast import For
 import re
 import os
 import requests
-from colorama import init,Fore,Back,Style
+from colorama import init,Fore
 from bs4 import BeautifulSoup
 import pandas
 import maskpass
 import warnings
-import platform
 import click
 #============
 
@@ -26,7 +24,6 @@ pandas.set_option('display.max_colwidth', 200)
 
 def getCardImage():
     getCardImageURL=''
-    namedWindow=''
     getCardImageType=int(input("0:返回上一级\n1:正面原始卡\n2:正面批注卡\n3:背面原始卡\n4:背面批注卡\n请指定需要显示的卡图像:"))
     if(getCardImageType==0):
         return;
@@ -60,7 +57,7 @@ def ClearScreen():
 
 def Login():
     init()
-    print("==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.4)\n\n==================================")
+    print(Fore.WHITE + "==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.5)\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
@@ -75,15 +72,30 @@ def Login():
         
 
 def getSpecificScore(rootURL,isTotal):
-    global paperID
+    global paperID,examDataID,isPaperSorted
+    isPaperSorted = False
     print(rootURL)
+    sortRootURL = "https://yue.hsdfz.com.cn/oaklet/student/userexampaperhtmldata.html?pid="+ queryTestID +"&sid="+ QueryTestSubject +"&uid=" + username
     testSpecificResult = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
+    testSortedResult = BeautifulSoup(oaklet.get(sortRootURL).content,"lxml")
+    try:
+        examDataID = re.findall(r"examdataid=(.+)\"", str(testSortedResult))[0]
+    except(IndexError):
+        examDataID = "null"
+        print("提示：此科目未分题型，无法使用分题型列表。")
     #print(str(testSpecificResult))
     #print(testSpecificResult.find_all("table"))
-    paperResult = paperErrors = paperObjectResult = paperSubjectResult = pandas.DataFrame()
+    paperResult = paperErrors = paperObjectResult = paperSubjectResult = paperSortedResult = pandas.DataFrame()
     if isTotal == 0:
         try:
             paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
+            if(examDataID != "null"):
+                paperSortedGet = oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/listuserscorebyqt.html?paperdataid=" + paperID + "&examdataid=" + examDataID)
+                if("请等待" in paperSortedGet.text):
+                    print("提示：此科目试卷未评阅完毕，无法使用分题型列表。")
+                else:
+                    isPaperSorted = True
+                    paperSortedResult = paperSortedResult.append(pandas.read_html(str((BeautifulSoup(paperSortedGet.content,"lxml").find_all("table"))),match="序号"))
             url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
             paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
             paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1)
@@ -99,10 +111,12 @@ def getSpecificScore(rootURL,isTotal):
             print("\n主观题当前得分合计(可能含未评阅试题): " + str(paperSubjectResult['考生得分'].sum()) + "\n")
             print("==========错题情况==========")
             print(paperErrors)
+            if(isPaperSorted == True):
+                print("=========分题型显示=========")
+                print(paperSortedResult)
             res=input(Fore.RED+"是否需要显示评卷图?(y/N) "+Fore.WHITE)
             if(res=='y' or res=='Y'):
                 getCardImage()
-            
         except(IndexError):
             print(Fore.RED + "\n无该科目试卷信息，可能是 ID 无效，或考生未参与该科考试，或试卷未扫描。\n"+Fore.WHITE)
     else:
@@ -117,7 +131,7 @@ def getSpecificScore(rootURL,isTotal):
 
 
 def queryTestInfo(rootURL):
-    global isForceQuery
+    global isForceQuery,QueryTestSubject
     testGeneralInfo = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
     #print(testGeneralInfo)
     if testGeneralInfo.find_all("li") == []:
