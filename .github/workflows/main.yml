@@ -26,18 +26,14 @@ jobs:
       - name: Install pyinstaller
         run: pip install pyinstaller
 
-      - name: Packaging Standalone exe file
+      - name: Packaging exe to zip
         run: |
           pyinstaller -F -i ./icon.ico ./yue-hsdfz-student.py
           move ./dist/yue-hsdfz-student.exe ./
-          
-      - name: Packaging exe to zip
-        run: |
-          pyinstaller -D -i ./icon.ico ./yue-hsdfz-student.py
-          Compress-Archive -Path ./dist/yue-hsdfz-student/ -DestinationPath ./yue-hsdfz-student-windows-2019.zip
+          Compress-Archive -Path ./dist/ -DestinationPath ./yue-hsdfz-student-windows-2019.zip
         
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: yue-hsdfz-student
-          path: dist/
+          name: yue-hsdfz-student-windows-2019.zip
+          path: /
