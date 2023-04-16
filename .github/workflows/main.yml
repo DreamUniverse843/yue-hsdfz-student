@@ -1,0 +1,43 @@
+name: Packaging Application
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows-2019:
+    runs-on: windows-2019
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install requirements.txt
+        run: pip install -r requirements.txt
+
+      - name: Install pyinstaller
+        run: pip install pyinstaller
+
+      - name: Packaging Standalone exe file
+        run: |
+          pyinstaller -F -i ./icon.ico ./yue-hsdfz-student.py
+          move ./dist/yue-hsdfz-student.exe ./
+          
+      - name: Packaging exe to zip
+        run: |
+          pyinstaller -D -i ./icon.ico ./yue-hsdfz-student.py
+          Compress-Archive -Path ./dist/yue-hsdfz-student/ -DestinationPath ./yue-hsdfz-student-windows-2019.zip
+        
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: yue-hsdfz-student
+          path: dist/
