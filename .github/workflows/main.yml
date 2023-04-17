@@ -84,7 +84,7 @@ jobs:
 
       - name: Packaging Standalone exe file
         run: |
-          pyinstaller -F -w -i ./icon.ico ./yue-hsdfz-student.py
+          pyinstaller -F -w  ./yue-hsdfz-student.py
         
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
