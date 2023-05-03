@@ -22,6 +22,23 @@ pandas.set_option('display.unicode.east_asian_width', True)
 pandas.set_option('display.width', 200)
 pandas.set_option('display.max_colwidth', 200)
 
+# 把 HTTP GET 封装为一个函数，当 cookies 过期时自动重新登录并恢复数据
+def Rget(URL):
+    Response = oaklet.get(URL)
+    if("登　　录" in Response.text):
+        print("会话可能已经过期，正在重新登录。")
+        res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?j_username="+ username +"&j_password="+ password +"&submit=%E7%99%BB%E3%80%80%E3%80%80%E5%BD%95")
+        if("用户名或密码错误！" in res.text):
+            print(Fore.RED+"自动重新登录失败，请重新输入用户信息。"+ Fore.WHITE)
+            Login()
+        else:
+            print("自动重新登录成功。\n")
+            return oaklet.get(URL); # 如果发生了登录需要再获取一次
+    else:
+        return Response;
+    
+
+# 取答题卡图像
 def getCardImage():
     getCardImageURL=''
     getCardImageType=int(input("0:返回上一级\n1:正面原始卡\n2:正面批注卡\n3:背面原始卡\n4:背面批注卡\n请指定需要显示的卡图像:"))
@@ -30,24 +47,24 @@ def getCardImage():
     else:
         if(getCardImageType==1):
             url = "https://yue.hsdfz.com.cn/oaklet/student/paperdataview_frontimage.html?id=" + paperID
-            ImgLabel = BeautifulSoup(oaklet.get(url).content,"lxml").find_all('img')
+            ImgLabel = BeautifulSoup(Rget(url).content,"lxml").find_all('img')
             for imgURL in ImgLabel:
                getCardImageURL=imgURL.get('src')
         elif(getCardImageType==2):
-            oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/recreatemarkedpaperdata.html?id=" + paperID + "&side=front") # 取批注卡时先刷新批注
+            Rget("https://yue.hsdfz.com.cn/oaklet/student/recreatemarkedpaperdata.html?id=" + paperID + "&side=front") # 取批注卡时先刷新批注
             print("请求刷新批注信息中，请稍等。")
             getCardImageURL = "https://yue.hsdfz.com.cn/oaklet/student/getmarkedpaperdata.html?id=" + paperID + "&side=front"
         elif(getCardImageType==3):
             url = "https://yue.hsdfz.com.cn/oaklet/student/paperdataview_backimage.html?id=" + paperID
-            ImgLabel = BeautifulSoup(oaklet.get(url).content,"lxml").find_all('img')
+            ImgLabel = BeautifulSoup(Rget(url).content,"lxml").find_all('img')
             for imgURL in ImgLabel:
                 getCardImageURL=imgURL.get('src')
         elif(getCardImageType==4):
-            oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/recreatemarkedpaperdata.html?id=" + paperID + "&side=back") # 取批注卡时先刷新批注
+            Rget("https://yue.hsdfz.com.cn/oaklet/student/recreatemarkedpaperdata.html?id=" + paperID + "&side=back") # 取批注卡时先刷新批注
             print("请求刷新批注信息中，请稍等。")
             getCardImageURL = "https://yue.hsdfz.com.cn/oaklet/student/getmarkedpaperdata.html?id=" + paperID + "&side=back"
         with open('cache.jpg',"wb") as Image:
-            Image.write(oaklet.get(getCardImageURL).content)
+            Image.write(Rget(getCardImageURL).content)
         os.startfile('cache.jpg')
         getCardImage()
 
@@ -55,9 +72,10 @@ def getCardImage():
 def ClearScreen():
     click.clear()
 
+# 登录
 def Login():
-    init()
-    print(Fore.WHITE + "==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.5)\n\n==================================")
+    init() # 彩色字符显示初始化
+    print(Fore.WHITE + "==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.6)\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
@@ -70,37 +88,35 @@ def Login():
         print(Fore.CYAN+"登录成功。\n")
         MainMenu()
         
-
+# 取得分信息
 def getSpecificScore(rootURL,isTotal):
     global paperID,examDataID,isPaperSorted
     isPaperSorted = False
     print(rootURL)
     sortRootURL = "https://yue.hsdfz.com.cn/oaklet/student/userexampaperhtmldata.html?pid="+ queryTestID +"&sid="+ QueryTestSubject +"&uid=" + username
-    testSpecificResult = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
-    testSortedResult = BeautifulSoup(oaklet.get(sortRootURL).content,"lxml")
+    testSpecificResult = BeautifulSoup(Rget(rootURL).content,"lxml")
+    testSortedResult = BeautifulSoup(Rget(sortRootURL).content,"lxml")
     try:
-        examDataID = re.findall(r"examdataid=(.+)\"", str(testSortedResult))[0]
+        examDataID = re.findall(r"examdataid=(.+)\"", str(testSortedResult))[0] # 取分题型信息
     except(IndexError):
         examDataID = "null"
         print("提示：此科目未分题型，无法使用分题型列表。")
-    #print(str(testSpecificResult))
-    #print(testSpecificResult.find_all("table"))
     paperResult = paperErrors = paperObjectResult = paperSubjectResult = paperSortedResult = pandas.DataFrame()
     if isTotal == 0:
         try:
             paperID = re.findall(r"paperdataid=(.+)&amp;", str(testSpecificResult))[0]
             if(examDataID != "null"):
-                paperSortedGet = oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/listuserscorebyqt.html?paperdataid=" + paperID + "&examdataid=" + examDataID)
+                paperSortedGet = Rget("https://yue.hsdfz.com.cn/oaklet/student/listuserscorebyqt.html?paperdataid=" + paperID + "&examdataid=" + examDataID)
                 if("请等待" in paperSortedGet.text):
                     print("提示：此科目试卷未评阅完毕，无法使用分题型列表。")
                 else:
                     isPaperSorted = True
                     paperSortedResult = paperSortedResult.append(pandas.read_html(str((BeautifulSoup(paperSortedGet.content,"lxml").find_all("table"))),match="序号"))
             url = "https://yue.hsdfz.com.cn/oaklet/student/getuserexampaperdata.html?paperdataid="+ paperID + "&amp;utreeid="
-            paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="考号"))
-            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(oaklet.get(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1)
-            paperObjectResult = paperObjectResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/listuseroqs.html?paperdataid=" + paperID).content,"lxml").find_all("table"))),match="序号"))
-            paperSubjectResult = paperSubjectResult.append(pandas.read_html(str((BeautifulSoup(oaklet.get("https://yue.hsdfz.com.cn/oaklet/student/listusersqs.html?paperdataid=" + paperID).content,"lxml").find_all("table"))),match="序号"))
+            paperResult = paperResult.append(pandas.read_html(str((BeautifulSoup(Rget(url).content,"lxml").find_all("table"))),match="考号"))
+            paperErrors = paperErrors.append(pandas.read_html(str((BeautifulSoup(Rget(url).content,"lxml").find_all("table"))),match="题号")).drop(['知识点'],axis=1)
+            paperObjectResult = paperObjectResult.append(pandas.read_html(str((BeautifulSoup(Rget("https://yue.hsdfz.com.cn/oaklet/student/listuseroqs.html?paperdataid=" + paperID).content,"lxml").find_all("table"))),match="序号"))
+            paperSubjectResult = paperSubjectResult.append(pandas.read_html(str((BeautifulSoup(Rget("https://yue.hsdfz.com.cn/oaklet/student/listusersqs.html?paperdataid=" + paperID).content,"lxml").find_all("table"))),match="序号"))
             print("==========基本情况==========")
             print(paperResult.iloc[0])
             print("=========客观题情况=========")
@@ -127,12 +143,10 @@ def getSpecificScore(rootURL,isTotal):
         except (ValueError):
             print(Fore.RED + "\n没有多科数据，可能未合成总成绩表。\n")
 
-    
-
-
+# 取考试学科数据
 def queryTestInfo(rootURL):
     global isForceQuery,QueryTestSubject
-    testGeneralInfo = BeautifulSoup(oaklet.get(rootURL).content,"lxml")
+    testGeneralInfo = BeautifulSoup(Rget(rootURL).content,"lxml")
     #print(testGeneralInfo)
     if testGeneralInfo.find_all("li") == []:
         print(Fore.RED + "未获取到考试数据，考试 ID 可能无效。" + Fore.WHITE)
@@ -144,7 +158,6 @@ def queryTestInfo(rootURL):
                 print(Fore.RED + "请注意:您正在进行强制查询。\n" + Fore.WHITE)
                 print(" 14  语文\n 22  政治\n 17  物理\n 15  数学\n 16  英语\n 18  化学\n 21  地理\n 20  历史\n 19  生物")
     print("\n当前查询的考试 ID:"+queryTestID)
-    #print(testGeneralInfo.find_all("a"))
     if testGeneralInfo.find_all("a") == []:
         print(Fore.RED + "目前该考试尚未出总成绩，直接查询相应学科可能成绩不准确!"+Fore.WHITE)
     else:
@@ -152,7 +165,6 @@ def queryTestInfo(rootURL):
     for child in testGeneralInfo.find_all("li"):
         itemID = child.get('itemid')
         itemName = (re.sub(r'[\u3000\u0020\t]+', '', child.get_text()).replace("\n",""))
-        #print(itemID)
         if itemID is None:
             continue;
         else:
@@ -166,15 +178,14 @@ def queryTestInfo(rootURL):
         MainMenu()
     else:
         url = "https://yue.hsdfz.com.cn/oaklet/student/userexampaperhtmldata.html?pid="+ queryTestID +"&sid="+ QueryTestSubject +"&uid=" + username
-        getSpecificScore(url,0)
-    #print(url)
-    
+        getSpecificScore(url,0) 
     queryTestInfo(rootURL)
 
+# 主菜单
 def MainMenu():
     global queryTestID,isForceQuery
     isForceQuery = ""
-    print(Fore.MAGENTA+"0.退出\n1.查考试清单\n2.直查考试id\n3.退出登录")
+    print(Fore.MAGENTA+"0.退出\n1.查考试清单\n2.直查考试id\n3.退出登录"+Fore.WHITE)
     Mission = input(Fore.RED + "请选择要执行的任务:" + Fore.WHITE)
     if Mission=="2":
         queryTestID = input("请输入需要查询的考试 id:")
@@ -183,7 +194,7 @@ def MainMenu():
     else:
         if Mission=="1":
             url = "https://yue.hsdfz.com.cn/oaklet/student/listprojectwithlinkhtmldata.html?uid="+ str(username)
-            testListElement = BeautifulSoup(oaklet.get(url).content,'lxml')
+            testListElement = BeautifulSoup(Rget(url).content,'lxml')
             for child in testListElement.find_all("li"):
                 #print(child)
                 testID = child.get('id')
@@ -197,11 +208,12 @@ def MainMenu():
                 queryTestInfo(url)
         elif Mission=="3":
             url = "https://yue.hsdfz.com.cn/oaklet/j_spring_security_logout"
-            res = oaklet.get(url)
+            res = Rget(url)
             print("已成功退出登录。")
             Login()
         else:
             print("\nBye\n")
             exit()
 
+# 启动点
 Start=Login()
