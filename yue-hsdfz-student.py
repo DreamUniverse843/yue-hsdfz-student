@@ -27,7 +27,7 @@ def Rget(URL):
     Response = oaklet.get(URL)
     if("登　　录" in Response.text):
         print("会话可能已经过期，正在重新登录。")
-        res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?j_username="+ username +"&j_password="+ password +"&submit=%E7%99%BB%E3%80%80%E3%80%80%E5%BD%95")
+        res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?ajax=1",params = {"j_username":username,"j_password":password})
         if("用户名或密码错误！" in res.text):
             print(Fore.RED+"自动重新登录失败，请重新输入用户信息。"+ Fore.WHITE)
             Login()
@@ -75,12 +75,13 @@ def ClearScreen():
 # 登录
 def Login():
     init() # 彩色字符显示初始化
-    print(Fore.WHITE + "==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.6)\n\n==================================")
+    print(Fore.WHITE + "==================================\n\n hsdfz oaklet student cilent\n https://github.com/DreamUniverse843/yue-hsdfz-student\n Licensed under GPLv3. (Stable 1.0.7)\n\n==================================")
     global username,password
     username=input("请输入用户名：")
     password=maskpass.askpass("请输入密码：")
     print("\n登录中。如程序长时间卡在此消息处，可能学校服务器响应超时。\n")
-    res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?j_username="+ username +"&j_password="+ password +"&submit=%E7%99%BB%E3%80%80%E3%80%80%E5%BD%95")
+    res = oaklet.post("https://yue.hsdfz.com.cn/oaklet/j_spring_security_check?ajax=1",params = {"j_username":username,"j_password":password})
+    #print(res.content)
     if("用户名或密码错误！" in res.text):
         print(Fore.RED+"用户名或密码错误，请检查用户名和密码是否正确。"+ Fore.WHITE)
         exit()
